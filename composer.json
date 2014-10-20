@@ -1,0 +1,24 @@
+{
+    "name":         "maximethebault/IntraFetcher",
+    "authors":      [
+        {
+            "name":     "maximethebault",
+            "email":    "contact@maximethebault.me",
+            "homepage": "http://maximethebault.me",
+            "role":     "Developer"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url":  "https://github.com/maximethebault/IntraFetcher.git"
+        }
+    ],
+    "require":      {
+    },
+    "autoload":     {
+        "psr-4": {
+            "Maximethebault\\IntraFetcher\\": "src/"
+        }
+    }
+}
