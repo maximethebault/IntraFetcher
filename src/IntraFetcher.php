@@ -2,7 +2,6 @@
 
 namespace Maximethebault\IntraFetcher;
 
-use finfo;
 use Maximethebault\IntraFetcher\HttpRequest\HttpRequestManager;
 use URL\Normalizer;
 
@@ -100,8 +99,7 @@ class IntraFetcher
                 // download the PDF
                 $pdfData = $this->_httpRequestManager->getPage($url);
                 // check if the file exists and is a PDF
-                $finfo = new finfo(FILEINFO_MIME);
-                if($finfo->buffer($pdfData) != 'application/pdf') {
+                if(!PdfFile::isPdfData($pdfData)) {
                     continue;
                 }
                 // get the file's basename and registers it as a new menu
@@ -119,11 +117,31 @@ class IntraFetcher
         if(!$this->_baseUrl) {
             $this->_baseUrl = 'http://intranet.insa-rennes.fr/fileadmin/ressources_intranet/Restaurant';
         }
+        $this->_baseUrl = $this->_baseUrl . '/';
         // we need to sort the menus we already got from the intranet
         usort($this->_rawMenu, array('Menu', 'sortByAscendingDate'));
         // get latest menu
         $latestMenu = $this->_rawMenu[count($this->_rawMenu) - 1];
+        $basename = $latestMenu->getRemoteName();
         // we'll get the number of the week from the filename, and do a loop from it!
+        $currentId = MenuId::fromString($basename);
+        $partToReplace = $currentId->getWeekNumber();
+        while(true) {
+            $menuRemotePath = str_replace($partToReplace, $currentId->getWeekNumber(), $basename);
+            $menuRemotePathAlt = null;
+            if($currentId->getWeekNumber() < 10) {
+                $menuRemotePathAlt = str_replace($partToReplace, '0' . $currentId->getWeekNumber(), $basename);
+            }
+            $dlUrl = $this->_baseUrl . $menuRemotePath;
+            $pdfData = $this->_httpRequestManager->getPage($dlUrl);
+            if(!PdfFile::isPdfData($pdfData)) {
+                if(!$menuRemotePathAlt) {
+                    break;
+                }
+            }
 
+
+            $currentId = $currentId->increment();
+        }
     }
 }
