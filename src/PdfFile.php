@@ -2,6 +2,8 @@
 
 namespace Maximethebault\IntraFetcher;
 
+use finfo;
+
 abstract class PdfFile
 {
     /**
@@ -22,6 +24,21 @@ abstract class PdfFile
         $this->_pdfData = $pdfData;
     }
 
+    /**
+     * Whether the data is a PDF
+     *
+     * @param $data
+     *
+     * @return bool
+     */
+    public static function isPdfData($data) {
+        $finfo = new finfo(FILEINFO_MIME);
+        if($finfo->buffer($data) == 'application/pdf') {
+            return true;
+        }
+        return false;
+    }
+
     public function getFileHash() {
         if(file_exists($this->getLocalPath())) {
             return md5_file($this->getLocalPath());
@@ -38,6 +55,13 @@ abstract class PdfFile
      * That's what this method does!
      */
     public function commitChanges() {
+    }
+
+    /**
+     * @return string
+     */
+    public function getRemoteName() {
+        return $this->_remoteName;
     }
 
     abstract protected function getLocalPath();
