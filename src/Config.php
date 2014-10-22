@@ -27,7 +27,9 @@ class Config
      * The latter is organized this way :
      *  _PATH_/_YEAR_/_WEEKNUMBER_.pdf
      *
-     * _PATH_ should exist, the subfolders will be created automatically
+     * _PATH_ should exist, the subfolders (_YEAR) will be created automatically
+     *
+     * _PATH_ should have a trailing directory separator
      *
      * @param string $pdfPath
      */

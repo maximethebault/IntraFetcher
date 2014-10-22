@@ -7,6 +7,10 @@ use finfo;
 abstract class PdfFile
 {
     /**
+     * @var Config
+     */
+    protected $_config;
+    /**
      * Remote name of the PDF file
      *
      * @var string
@@ -19,7 +23,8 @@ abstract class PdfFile
      */
     private $_pdfData;
 
-    public function __construct($remoteName, $pdfData) {
+    public function __construct($_config, $remoteName, $pdfData) {
+        $this->_config = $_config;
         $this->_remoteName = $remoteName;
         $this->_pdfData = $pdfData;
     }
@@ -39,15 +44,12 @@ abstract class PdfFile
         return false;
     }
 
-    public function getFileHash() {
-        if(file_exists($this->getLocalPath())) {
-            return md5_file($this->getLocalPath());
-        }
-        return null;
+    public function isNew() {
+        return ($this->getFileHash() == null);
     }
 
-    public function getDataHash() {
-        return md5($this->_pdfData);
+    public function isUpdated() {
+        return ($this->getFileHash() != null && $this->getFileHash() != $this->getDataHash());
     }
 
     /**
@@ -55,6 +57,7 @@ abstract class PdfFile
      * That's what this method does!
      */
     public function commitChanges() {
+        file_put_contents($this->getLocalPath(), $this->_pdfData);
     }
 
     /**
@@ -65,4 +68,15 @@ abstract class PdfFile
     }
 
     abstract protected function getLocalPath();
+
+    private function getFileHash() {
+        if(file_exists($this->getLocalPath())) {
+            return md5_file($this->getLocalPath());
+        }
+        return null;
+    }
+
+    private function getDataHash() {
+        return md5($this->_pdfData);
+    }
 } 
