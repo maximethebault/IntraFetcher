@@ -8,12 +8,21 @@ class Config
      * @var string
      */
     private $_pdfPath;
+    /**
+     * @var string
+     */
+    private $_tempPath;
 
     private $_cookiePath;
 
     private $_insaUsername;
 
     private $_insaPassword;
+
+    public function __construct() {
+        $this->_tempPath = __DIR__ . '/../tmp/';
+    }
+
 
     /**
      * @return string
@@ -82,5 +91,21 @@ class Config
      */
     public function setInsaPassword($insaPassword) {
         $this->_insaPassword = $insaPassword;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTempPath() {
+        return $this->_tempPath;
+    }
+
+    /**
+     * Sets the path for temporary files. Don't forget the trailing slash!
+     *
+     * @param string $tempPath
+     */
+    public function setTempPath($tempPath) {
+        $this->_tempPath = $tempPath;
     }
 }
