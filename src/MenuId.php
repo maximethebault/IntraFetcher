@@ -63,11 +63,11 @@ class MenuId
             throw new MenuIdParseException('Illegal value for a week number (actual=' . $weekNumber . ')');
         }
         $currentMonth = date('n');
-        if($currentMonth >= 9) {
+        if($currentMonth >= 10) {
             $oldYear = date('Y');
             $newYear = date('Y') + 1;
         }
-        elseif($currentMonth < 3) {
+        elseif($currentMonth <= 3) {
             $oldYear = date('Y') - 1;
             $newYear = date('Y');
         }
