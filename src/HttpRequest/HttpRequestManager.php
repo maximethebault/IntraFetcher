@@ -59,8 +59,8 @@ class HttpRequestManager
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/35.0');
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, self::REQUEST_TIMEOUT);
-        curl_setopt($ch, CURLOPT_COOKIEFILE, $this->_config->getCookiePath());
-        curl_setopt($ch, CURLOPT_COOKIEJAR, $this->_config->getCookiePath());
+        curl_setopt($ch, CURLOPT_COOKIEFILE, $this->getCookiePath());
+        curl_setopt($ch, CURLOPT_COOKIEJAR, $this->getCookiePath());
         if($post) {
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
@@ -75,13 +75,17 @@ class HttpRequestManager
      */
     private function doLogin() {
         // erases the cookie file, replaces it with an empty file
-        unlink($this->_config->getCookiePath());
-        touch($this->_config->getCookiePath());
+        unlink($this->getCookiePath());
+        touch($this->getCookiePath());
         // builds the form for the login
         $loginPage = $this->makeRequest('https://cas.insa-rennes.fr/cas/login?service=http://ent.insa-rennes.fr/Login');
         if(!preg_match('`name="lt" value="(.*)"`i', $loginPage, $match)) {
             throw new HttpException('Malformed login page');
         }
         $this->makeRequest('https://cas.insa-rennes.fr/cas/login?service=http://ent.insa-rennes.fr/Login', 'username=' . urlencode($this->_config->getInsaUsername()) . '&password=' . urlencode($this->_config->getInsaPassword()) . '&lt=' . $match[1] . '&_eventId=submit&submit=Se+Connecter');
+    }
+
+    private function getCookiePath() {
+        return $this->_config->getTempPath() . 'intranet_auth_cookie.txt';
     }
 } 

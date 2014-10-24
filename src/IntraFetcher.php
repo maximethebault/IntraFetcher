@@ -2,6 +2,7 @@
 
 namespace Maximethebault\IntraFetcher;
 
+use Maximethebault\IntraFetcher\Excpetion\BreakingChangeException;
 use Maximethebault\IntraFetcher\HttpRequest\HttpRequestManager;
 use URL\Normalizer;
 
@@ -55,23 +56,41 @@ class IntraFetcher
      * This is also a protection against half-done work, in case of timeout limits or such
      */
     public function commitChanges() {
+        foreach($this->_newMenu as $menu) {
+            $menu->commitChanges();
+        }
+        foreach($this->_updatedMenu as $menu) {
+            $menu->commitChanges();
+        }
     }
 
     public function getUpdatedMenu() {
+        return $this->_updatedMenu;
     }
 
     public function getNewMenu() {
+        return $this->_newMenu;
     }
 
-    public function fetchRawMenu() {
+    public function checkForMenu() {
+        $this->fetchRawMenu();
+        $this->organizeRawMenu();
+    }
+
+    private function fetchRawMenu() {
         $this->fetchMenuFromIntranetPage();
         $this->fetchMenuFromUrlGuessing();
     }
 
-    public function organizeRawMenu() {
-    }
-
-    public function checkMenu() {
+    private function organizeRawMenu() {
+        foreach($this->_rawMenu as $menu) {
+            if($menu->isNew()) {
+                $this->_newMenu[] = $menu;
+            }
+            elseif($menu->isUpdated()) {
+                $this->_updatedMenu[] = $menu;
+            }
+        }
     }
 
     /**
@@ -104,7 +123,7 @@ class IntraFetcher
                 }
                 // get the file's basename and registers it as a new menu
                 $filename = array_shift(explode('?', $baseName));
-                $this->_rawMenu[] = new Menu($filename, $pdfData);
+                $this->_rawMenu[] = new Menu($this->_config, $filename, $pdfData);
             }
         }
     }
@@ -112,36 +131,79 @@ class IntraFetcher
     /**
      *
      * @return Menu[]
+     *
+     * @throws Excpetion\BreakingChangeException
      */
     private function fetchMenuFromUrlGuessing() {
         if(!$this->_baseUrl) {
             $this->_baseUrl = 'http://intranet.insa-rennes.fr/fileadmin/ressources_intranet/Restaurant';
         }
+        $checkedWeek = array();
+        // in case files are not erased anymore on the intranet's server, prevent from infinite loop which would be dramatic
+        $loopProtection = 0;
         $this->_baseUrl = $this->_baseUrl . '/';
-        // we need to sort the menus we already got from the intranet
-        usort($this->_rawMenu, array('Menu', 'sortByAscendingDate'));
-        // get latest menu
-        $latestMenu = $this->_rawMenu[count($this->_rawMenu) - 1];
-        $basename = $latestMenu->getRemoteName();
-        // we'll get the number of the week from the filename, and do a loop from it!
-        $currentId = MenuId::fromString($basename);
-        $partToReplace = $currentId->getWeekNumber();
-        while(true) {
-            $menuRemotePath = str_replace($partToReplace, $currentId->getWeekNumber(), $basename);
-            $menuRemotePathAlt = null;
-            if($currentId->getWeekNumber() < 10) {
-                $menuRemotePathAlt = str_replace($partToReplace, '0' . $currentId->getWeekNumber(), $basename);
-            }
-            $dlUrl = $this->_baseUrl . $menuRemotePath;
-            $pdfData = $this->_httpRequestManager->getPage($dlUrl);
-            if(!PdfFile::isPdfData($pdfData)) {
-                if(!$menuRemotePathAlt) {
+        if(count($this->_rawMenu)) {
+            // we need to sort the menus we already got from the intranet
+            usort($this->_rawMenu, array('Menu', 'sortByAscendingDate'));
+            // get latest menu
+            $latestMenu = $this->_rawMenu[count($this->_rawMenu) - 1];
+            $basename = $latestMenu->getRemoteName();
+            // we'll get the number of the week from the filename, and do a loop from it!
+            $currentId = MenuId::fromString($basename);
+            $replacer = new StringReplacer($basename, $currentId);
+            while(true) {
+                if($loopProtection > 20) {
+                    throw new BreakingChangeException('URL guessing loop is going crazy');
+                }
+                $checkedWeek[] = $currentId;
+
+                if(!$this->fetchMenu($replacer, $currentId->getWeekNumber())) {
                     break;
                 }
+
+                $currentId = $currentId->increment();
+                $loopProtection++;
+            }
+        }
+        else {
+            $basename = 'menu10.pdf';
+            $currentId = MenuId::fromString($basename);
+            $replacer = new StringReplacer($basename, $currentId);
+        }
+        // in case there was a long period of inactivity, we need to test from the current week
+        $currentId = new MenuId(date('W'), date('o'));
+        $loopProtection = 0;
+        while(true) {
+            if($loopProtection > 20) {
+                throw new BreakingChangeException('URL guessing loop n°2 is going crazy');
+            }
+            // TODO: check against $checkedWeek and break the loop if $currentId is inside
+
+            if(!$this->fetchMenu($replacer, $currentId->getWeekNumber())) {
+                break;
             }
 
-
             $currentId = $currentId->increment();
+            $loopProtection++;
         }
+    }
+
+    /**
+     *
+     *
+     * @param $replacer StringReplacer
+     * @param $weekNumber
+     *
+     * @return bool whether menu was successfully checked
+     */
+    private function fetchMenu($replacer, $weekNumber) {
+        $menuRemotePath = $replacer->doReplace($weekNumber);
+        $dlUrl = $this->_baseUrl . $menuRemotePath;
+        $pdfData = $this->_httpRequestManager->getPage($dlUrl);
+        if(!PdfFile::isPdfData($pdfData)) {
+            return false;
+        }
+        $this->_rawMenu[] = new Menu($menuRemotePath, $menuRemotePath, $pdfData);
+        return true;
     }
 }

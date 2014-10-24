@@ -9,6 +9,11 @@ class Menu extends PdfFile
      */
     private $_menuId;
 
+    function __construct($_config, $remoteName, $pdfData) {
+        parent::__construct($_config, $remoteName, $pdfData);
+        $this->_menuId = MenuId::fromString($remoteName);
+    }
+
     /**
      * @param $menu1 Menu
      * @param $menu2 Menu
@@ -24,7 +29,14 @@ class Menu extends PdfFile
         }
     }
 
+    public function checkConsistency() {
+    }
+
     protected function getLocalPath() {
-        // TODO: Implement getLocalPath() method.
+        $directory = $this->_config->getPdfPath() . $this->_menuId->getYear() . '/';
+        if(!is_dir($directory)) {
+            mkdir($directory);
+        }
+        return $directory . $this->_menuId->getWeekNumber();
     }
 }

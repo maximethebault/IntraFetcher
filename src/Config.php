@@ -8,12 +8,19 @@ class Config
      * @var string
      */
     private $_pdfPath;
-
-    private $_cookiePath;
+    /**
+     * @var string
+     */
+    private $_tempPath;
 
     private $_insaUsername;
 
     private $_insaPassword;
+
+    public function __construct() {
+        $this->_tempPath = __DIR__ . '/../tmp/';
+    }
+
 
     /**
      * @return string
@@ -27,31 +34,14 @@ class Config
      * The latter is organized this way :
      *  _PATH_/_YEAR_/_WEEKNUMBER_.pdf
      *
-     * _PATH_ should exist, the subfolders will be created automatically
+     * _PATH_ should exist, the subfolders (_YEAR_) will be created automatically
+     *
+     * _PATH_ should have a trailing directory separator
      *
      * @param string $pdfPath
      */
     public function setPdfPath($pdfPath) {
         $this->_pdfPath = $pdfPath;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getCookiePath() {
-        return $this->_cookiePath;
-    }
-
-    /**
-     * Path to the cookie file
-     * WARNING: a real path must be passed (e.g. /var/www/insamiam/cookie.txt)
-     *
-     * @param string $cookiePath
-     *
-     * @see realpath
-     */
-    public function setCookiePath($cookiePath) {
-        $this->_cookiePath = $cookiePath;
     }
 
     /**
@@ -80,5 +70,22 @@ class Config
      */
     public function setInsaPassword($insaPassword) {
         $this->_insaPassword = $insaPassword;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTempPath() {
+        return $this->_tempPath;
+    }
+
+    /**
+     * Sets the path for temporary files. Don't forget the trailing slash!
+     * Should be a real path (e.g., /var/www/insamiam/tmp)
+     *
+     * @param string $tempPath
+     */
+    public function setTempPath($tempPath) {
+        $this->_tempPath = $tempPath;
     }
 }
