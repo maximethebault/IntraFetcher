@@ -2,3 +2,6 @@ IntraFetcher.iml
 .idea
 vendor
 composer.lock
+config.php
+tmp
+!tmp/README.md

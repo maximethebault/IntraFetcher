@@ -103,7 +103,7 @@ class IntraFetcher
         $pageData = $this->_httpRequestManager->getPage('http://intranet.insa-rennes.fr/index.php?id=56');
         // extracts PDF's urls from the page
         $matches = array();
-        if(preg_match_all('`<a href="(.*)"(?:.*)>(?:.*)menu(?:.*)</a>`i', $pageData, $matches)) {
+        if(preg_match_all('`<a href="(.*?)"(?:.*)>(?:.*)menu(?:.*)</a>`i', $pageData, $matches)) {
             // for each URL found
             foreach($matches[1] as $url) {
                 if(strstr('intranet.insa-rennes.fr', $url) === false) {
@@ -124,7 +124,8 @@ class IntraFetcher
                     continue;
                 }
                 // get the file's basename and registers it as a new menu
-                $filename = array_shift(explode('?', $baseName));
+                $explodedName = explode('?', $baseName);
+                $filename = array_shift($explodedName);
                 $this->_rawMenu[] = new Menu($this->_config, $filename, $pdfData);
             }
         }
@@ -146,7 +147,7 @@ class IntraFetcher
         $this->_baseUrl = $this->_baseUrl . '/';
         if(count($this->_rawMenu)) {
             // we need to sort the menus we already got from the intranet
-            usort($this->_rawMenu, array('Menu', 'sortByAscendingDate'));
+            usort($this->_rawMenu, array('Maximethebault\IntraFetcher\Menu', 'sortByAscendingDate'));
             // get latest menu
             $latestMenu = $this->_rawMenu[count($this->_rawMenu) - 1];
             $basename = $latestMenu->getRemoteName();
@@ -208,7 +209,7 @@ class IntraFetcher
         if(!PdfFile::isPdfData($pdfData)) {
             return false;
         }
-        $this->_rawMenu[] = new Menu($menuRemotePath, $menuRemotePath, $pdfData);
+        $this->_rawMenu[] = new Menu($this->_config, $menuRemotePath, $pdfData);
         return true;
     }
 }

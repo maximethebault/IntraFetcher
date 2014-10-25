@@ -41,6 +41,7 @@ class Menu extends PdfFile
         $tempName = uniqid();
         // temp pdf path
         $tempPath = $this->_config->getTempPath() . $tempName;
+        file_put_contents($tempPath, $this->_pdfData);
         $pdf2Table = new PdfFile2Table($tempPath);
         $pdf2Table->parse($this->_config->getTempPath());
         $pages = $pdf2Table->getPages();
