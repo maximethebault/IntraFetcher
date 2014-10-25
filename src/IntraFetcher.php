@@ -86,9 +86,11 @@ class IntraFetcher
         foreach($this->_rawMenu as $menu) {
             if($menu->isNew()) {
                 $this->_newMenu[] = $menu;
+                $menu->checkConsistency();
             }
             elseif($menu->isUpdated()) {
                 $this->_updatedMenu[] = $menu;
+                $menu->checkConsistency();
             }
         }
     }
@@ -155,7 +157,8 @@ class IntraFetcher
                 if($loopProtection > 20) {
                     throw new BreakingChangeException('URL guessing loop is going crazy');
                 }
-                $checkedWeek[] = $currentId;
+
+                $checkedWeek[] = $currentId->getYear() . '/' . $currentId->getWeekNumber();
 
                 if(!$this->fetchMenu($replacer, $currentId->getWeekNumber())) {
                     break;
@@ -177,8 +180,10 @@ class IntraFetcher
             if($loopProtection > 20) {
                 throw new BreakingChangeException('URL guessing loop n°2 is going crazy');
             }
-            // TODO: check against $checkedWeek and break the loop if $currentId is inside
 
+            if(in_array($currentId->getYear() . '/' . $currentId->getWeekNumber(), $checkedWeek)) {
+                break;
+            }
             if(!$this->fetchMenu($replacer, $currentId->getWeekNumber())) {
                 break;
             }

@@ -3,7 +3,6 @@
 namespace Maximethebault\IntraFetcher;
 
 use finfo;
-use Maximethebault\Pdf2Table\PdfFile2Table;
 
 abstract class PdfFile
 {
@@ -51,14 +50,6 @@ abstract class PdfFile
 
     public function isUpdated() {
         return ($this->getFileHash() != null && $this->getFileHash() != $this->getDataHash());
-    }
-
-    public function checkConsistency() {
-        $tempName = uniqid();
-        $tempPath = $this->_config->getTempPath() . $tempName;
-        $pdf2Table = new PdfFile2Table($tempPath);
-
-        unlink($tempPath);
     }
 
     /**

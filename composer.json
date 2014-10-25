@@ -16,6 +16,10 @@
         {
             "type": "vcs",
             "url":  "https://github.com/maximethebault/Pdf2Table.git"
+        },
+        {
+            "type": "vcs",
+            "url":  "https://github.com/maximethebault/XmlParser.git"
         }
     ],
     "require":      {
