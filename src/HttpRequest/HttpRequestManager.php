@@ -41,8 +41,9 @@ class HttpRequestManager
         $pageData = $this->makeRequest($url);
         if(strstr($pageData, 'INSA RENNES - SSO CAS') !== false || strstr($pageData, 'do not have the right') !== false) {
             $this->doLogin();
-            $this->getPage($url, $tries + 1);
+            return $this->getPage($url, $tries + 1);
         }
+        return $pageData;
     }
 
     /**

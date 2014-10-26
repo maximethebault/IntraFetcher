@@ -3,7 +3,6 @@
 namespace Maximethebault\IntraFetcher;
 
 use finfo;
-use Maximethebault\Pdf2Table\PdfFile2Table;
 
 abstract class PdfFile
 {
@@ -12,17 +11,17 @@ abstract class PdfFile
      */
     protected $_config;
     /**
+     * Holds the PDF filecontent
+     *
+     * @var string
+     */
+    protected $_pdfData;
+    /**
      * Remote name of the PDF file
      *
      * @var string
      */
     private $_remoteName;
-    /**
-     * Holds the PDF filecontent
-     *
-     * @var string
-     */
-    private $_pdfData;
 
     public function __construct($_config, $remoteName, $pdfData) {
         $this->_config = $_config;
@@ -39,7 +38,7 @@ abstract class PdfFile
      */
     public static function isPdfData($data) {
         $finfo = new finfo(FILEINFO_MIME);
-        if($finfo->buffer($data) == 'application/pdf') {
+        if(strstr($finfo->buffer($data), 'application/pdf') !== false) {
             return true;
         }
         return false;
@@ -51,14 +50,6 @@ abstract class PdfFile
 
     public function isUpdated() {
         return ($this->getFileHash() != null && $this->getFileHash() != $this->getDataHash());
-    }
-
-    public function checkConsistency() {
-        $tempName = uniqid();
-        $tempPath = $this->_config->getTempPath() . $tempName;
-        $pdf2Table = new PdfFile2Table($tempPath);
-
-        unlink($tempPath);
     }
 
     /**
