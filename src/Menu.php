@@ -2,8 +2,10 @@
 
 namespace Maximethebault\IntraFetcher;
 
+use DateTime;
 use Maximethebault\IntraFetcher\Excpetion\InconsistentPdfException;
 use Maximethebault\Pdf2Table\PdfFile2Table;
+use Maximethebault\Pdf2Table\TableCell;
 
 class Menu extends PdfFile
 {
@@ -48,6 +50,7 @@ class Menu extends PdfFile
         file_put_contents($tempPath, $this->_pdfData);
         $pdf2Table = new PdfFile2Table($tempPath);
         $pdf2Table->parse($this->_config->getTempPath());
+        // first, check global structure
         $pages = $pdf2Table->getPages();
         if(count($pages) != 1) {
             throw new InconsistentPdfException('Expected 1 page, got ' . count($pages));
@@ -61,10 +64,52 @@ class Menu extends PdfFile
         if(count($text) != 1) {
             throw new InconsistentPdfException('Expected 1 line of text at cell(0;0), got ' . count($text));
         }
+        // check week number
         $actualText = (int) $text[0];
         if($actualText != $this->_menuId->getWeekNumber()) {
             throw new InconsistentPdfException('Expected week number ' . $this->_menuId->getWeekNumber() . ', got ' . $actualText);
         }
+        // check columns & rows heading
+        /** @var $checkForText TableCell[] */
+        $checkForText = array();
+        $dejeuner = $pages[0]->getTable()->getCell(0, 1);
+        $dejeuner2 = $pages[0]->getTable()->getCell(0, 2);
+        $checkForText['déjeuner'] = $dejeuner;
+        if($dejeuner != $dejeuner2) {
+            throw new InconsistentPdfException('Expected columns "déjeuner" to be spanned, but they weren\'t!');
+        }
+        $diner = $pages[0]->getTable()->getCell(0, 3);
+        $checkForText['dîner'] = $diner;
+        $locale = setlocale(LC_TIME, array('fr', 'fra', 'french', 'fr_FR', 'fr_FR@euro'));
+        if(!$locale) {
+            throw new \Exception('French locale must be available in order to do consistency checks on the Menu data');
+        }
+        $weekIterator = new DateTime();
+        $weekIterator->setISODate($this->_menuId->getYear(), $this->_menuId->getWeekNumber());
+        for($i = 1; $i <= 7; $i++) {
+            $day = $pages[0]->getTable()->getCell($i, 0);
+            $checkForText[strftime('%A %d', $weekIterator->getTimestamp())] = $day;
+            $weekIterator->modify('+1 day');
+        }
+
+        foreach($checkForText as $cellName => $cellObject) {
+            if($cell == null) {
+                throw new InconsistentPdfException('Cell ' . $cellName . ' not found');
+            }
+            $texts = $cellObject->getText();
+            if(count($texts) != 1) {
+                throw new InconsistentPdfException('Expected 1 line of text at cell ' . $cellName . ', got ' . count($text));
+            }
+            $actualText = strtolower($texts[0]);
+            $expectedText = strtolower($cellName);
+            if(levenshtein($expectedText, $actualText, 1, 2, 1) > 1) {
+                // doesn't throw if it's just a typo, or if it lacks a leading zero
+                // will throw if it's "lundi 8" instead of "lundi 9"
+                throw new InconsistentPdfException('Expected text ' . $expectedText . ', got ' . $actualText);
+            }
+        }
+
+
         unlink($tempPath);
     }
 
