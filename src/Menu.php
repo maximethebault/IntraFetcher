@@ -11,6 +11,10 @@ class Menu extends PdfFile
      * @var MenuId
      */
     private $_menuId;
+    /**
+     * @var \Maximethebault\Pdf2Table\Table
+     */
+    private $_menuTable;
 
     function __construct($_config, $remoteName, $pdfData) {
         parent::__construct($_config, $remoteName, $pdfData);
@@ -48,6 +52,7 @@ class Menu extends PdfFile
         if(count($pages) != 1) {
             throw new InconsistentPdfException('Expected 1 page, got ' . count($pages));
         }
+        $this->_menuTable = $pages[0]->getTable();
         $cell = $pages[0]->getTable()->getCell(0, 0);
         if(!$cell) {
             throw new InconsistentPdfException('Cell(0;0) doesn\'t exist!');
@@ -61,6 +66,20 @@ class Menu extends PdfFile
             throw new InconsistentPdfException('Expected week number ' . $this->_menuId->getWeekNumber() . ', got ' . $actualText);
         }
         unlink($tempPath);
+    }
+
+    /**
+     * @return MenuId
+     */
+    public function getMenuId() {
+        return $this->_menuId;
+    }
+
+    /**
+     * @return \Maximethebault\Pdf2Table\Table
+     */
+    public function getMenuTable() {
+        return $this->_menuTable;
     }
 
     protected function getLocalPath() {
