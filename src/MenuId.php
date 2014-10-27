@@ -38,7 +38,7 @@ class MenuId
      */
     public function __construct($weekNumber, $year, $weekNumberLength = 0) {
         $this->_weekNumber = (int) $weekNumber;
-        $this->_year = $year;
+        $this->_year = (int) $year;
         $this->_weekNumberLength = $weekNumberLength;
     }
 
@@ -59,28 +59,34 @@ class MenuId
         }
         $weekNumber = $matches[0][0];
         $weekNumberLength = strlen($weekNumber);
-        if($weekNumber < 0 || $weekNumber > 52) {
+        if($weekNumber < 0 || $weekNumber > 53) {
             throw new MenuIdParseException('Illegal value for a week number (actual=' . $weekNumber . ')');
         }
-        $currentMonth = date('n');
-        if($currentMonth >= 10) {
-            $oldYear = date('Y');
-            $newYear = date('Y') + 1;
+        /*
+         * We've got a week number. What now?
+         * We need to find the year it's associated with.
+         * It's much trickier than what you'd expect because of the fact that ISO-8601 week numbers can be splitted between two years.
+         *
+         * The assumption we're going to work with: the given week number is close to the current week number (i.e. the week number that you can read right now in your calendar!)
+         */
+
+        // we list all possible dates
+        $possibleDates = array();
+        $possibleDates[(string) (date('Y') - 1)] = strtotime((date('Y') - 1) . 'W' . str_pad($weekNumber, 2, '0', STR_PAD_LEFT));
+        $possibleDates[(string) date('Y')] = strtotime((date('Y')) . 'W' . str_pad($weekNumber, 2, '0', STR_PAD_LEFT));
+        $possibleDates[(string) (date('Y') + 1)] = strtotime((date('Y') + 1) . 'W' . str_pad($weekNumber, 2, '0', STR_PAD_LEFT));
+
+        // we calculate the differnece to the current date
+        foreach($possibleDates as $idx => $possibleDate) {
+            $possibleDates[$idx] = abs(time() - $possibleDate);
         }
-        elseif($currentMonth <= 3) {
-            $oldYear = date('Y') - 1;
-            $newYear = date('Y');
-        }
-        else {
-            $oldYear = date('Y');
-            $newYear = date('Y');
-        }
-        if($weekNumber > 26) {
-            $year = $oldYear;
-        }
-        else {
-            $year = $newYear;
-        }
+
+        // we take the minimum
+        $minDiff = min($possibleDates);
+
+        // we've got the minimum, let's get the matching index
+        $year = array_search($minDiff, $possibleDates);
+
         return new MenuId($weekNumber, $year, $weekNumberLength);
     }
 
@@ -120,6 +126,11 @@ class MenuId
     }
 
     public function increment() {
+        //TODO: this is completely buggy and needs to be updated
+
+        $incremented = strtotime("+1 week", strtotime($this->_year . 'W' . str_pad($this->_weekNumber, 2, '0', STR_PAD_LEFT)));
+        $weekNumber = date('W');
+
         if($this->getWeekNumber() == 52) {
             $weekNumber = 1;
             $year = $this->getYear() + 1;
