@@ -46,13 +46,18 @@ class MenuId
     /**
      * Builds a MenuId from a string
      *
-     * @param $str string the string used in the filename, e.g. "menu40.pdf"
+     * @param $str  string the string used in the filename, e.g. "menu40.pdf"
+     * @param $time int by default, we use the current time to compute the year associated with the parsed week number. This parameter makes it possible to change that.
      *
      * @return MenuId
      *
      * @throws Excpetion\MenuIdParseException
      */
-    public static function fromString($str) {
+    public static function fromString($str, $time = 0) {
+        if($time === 0) {
+            $time = time();
+        }
+
         $matches = array();
         if(preg_match_all('`\d+`', $str, $matches) > 1) {
             throw new MenuIdParseException('Expected only one integer in the input string, got more than one (in "' . $str . '")');
@@ -72,13 +77,13 @@ class MenuId
 
         // we list all possible dates
         $possibleDates = array();
-        $possibleDates[(string) (date('Y') - 1)] = strtotime((date('Y') - 1) . 'W' . str_pad($weekNumber, 2, '0', STR_PAD_LEFT));
-        $possibleDates[(string) date('Y')] = strtotime((date('Y')) . 'W' . str_pad($weekNumber, 2, '0', STR_PAD_LEFT));
-        $possibleDates[(string) (date('Y') + 1)] = strtotime((date('Y') + 1) . 'W' . str_pad($weekNumber, 2, '0', STR_PAD_LEFT));
+        $possibleDates[(string) (date('Y', $time) - 1)] = strtotime((date('Y', $time) - 1) . 'W' . str_pad($weekNumber, 2, '0', STR_PAD_LEFT));
+        $possibleDates[(string) date('Y', $time)] = strtotime((date('Y', $time)) . 'W' . str_pad($weekNumber, 2, '0', STR_PAD_LEFT));
+        $possibleDates[(string) (date('Y', $time) + 1)] = strtotime((date('Y', $time) + 1) . 'W' . str_pad($weekNumber, 2, '0', STR_PAD_LEFT));
 
         // we calculate the differnece to the current date
         foreach($possibleDates as $idx => $possibleDate) {
-            $possibleDates[$idx] = abs(time() - $possibleDate);
+            $possibleDates[$idx] = abs($time - $possibleDate);
         }
 
         // we take the minimum
@@ -126,19 +131,10 @@ class MenuId
     }
 
     public function increment() {
-        //TODO: this is completely buggy and needs to be updated
-
         $incremented = strtotime("+1 week", strtotime($this->_year . 'W' . str_pad($this->_weekNumber, 2, '0', STR_PAD_LEFT)));
-        $weekNumber = date('W');
+        $weekNumber = date('W', $incremented);
+        $year = date('o', $incremented);
 
-        if($this->getWeekNumber() == 52) {
-            $weekNumber = 1;
-            $year = $this->getYear() + 1;
-        }
-        else {
-            $weekNumber = $this->getWeekNumber() + 1;
-            $year = $this->getYear();
-        }
         return new MenuId($weekNumber, $year, $this->getWeekNumberLength());
     }
 
