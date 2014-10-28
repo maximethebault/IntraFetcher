@@ -60,12 +60,12 @@ class Menu extends PdfFile
         if(!$cell) {
             throw new InconsistentPdfException('Cell(0;0) doesn\'t exist!');
         }
-        $text = $cell->getText();
+        $text = $cell->getTextline();
         if(count($text) != 1) {
             throw new InconsistentPdfException('Expected 1 line of text at cell(0;0), got ' . count($text));
         }
         // check week number
-        $actualText = (int) $text[0];
+        $actualText = (int) $text[0]->getText();
         if($actualText != $this->_menuId->getWeekNumber()) {
             throw new InconsistentPdfException('Expected week number ' . $this->_menuId->getWeekNumber() . ', got ' . $actualText);
         }
@@ -96,11 +96,11 @@ class Menu extends PdfFile
             if($cell == null) {
                 throw new InconsistentPdfException('Cell ' . $cellName . ' not found');
             }
-            $texts = $cellObject->getText();
+            $texts = $cellObject->getTextline();
             if(count($texts) != 1) {
                 throw new InconsistentPdfException('Expected 1 line of text at cell ' . $cellName . ', got ' . count($text));
             }
-            $actualText = strtolower($texts[0]);
+            $actualText = strtolower($texts[0]->getText());
             $expectedText = strtolower($cellName);
             if(levenshtein($expectedText, $actualText, 1, 2, 1) > 1) {
                 // doesn't throw if it's just a typo, or if it lacks a leading zero
