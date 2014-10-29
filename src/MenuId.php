@@ -130,6 +130,9 @@ class MenuId
         return str_pad($this->_weekNumber, $this->_weekNumberLength, '0', STR_PAD_LEFT);
     }
 
+    /**
+     * @return MenuId
+     */
     public function increment() {
         $incremented = strtotime("+1 week", strtotime($this->_year . 'W' . str_pad($this->_weekNumber, 2, '0', STR_PAD_LEFT)));
         $weekNumber = date('W', $incremented);

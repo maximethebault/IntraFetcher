@@ -146,6 +146,10 @@ class IntraFetcher
         $loopProtection = 0;
         $this->_baseUrl = $this->_baseUrl . '/';
         if(count($this->_rawMenu)) {
+            // the menu(s) we've already downloaded so far need to be marked as already checked
+            foreach($this->_rawMenu as $alreadyGotMenu) {
+                $checkedWeek[] = $alreadyGotMenu->getMenuId()->getYear() . '/' . $alreadyGotMenu->getMenuId()->getWeekNumber();
+            }
             // we need to sort the menus we already got from the intranet
             usort($this->_rawMenu, array('Maximethebault\IntraFetcher\Menu', 'sortByAscendingDate'));
             // get latest menu
@@ -154,6 +158,9 @@ class IntraFetcher
             // we'll get the number of the week from the filename, and do a loop from it!
             $currentId = MenuId::fromString($basename);
             $replacer = new StringReplacer($basename, $currentId);
+            // we need to start from the week AFTER the one we already got
+            /** @var $currentId MenuId */
+            $currentId = $currentId->increment();
             while(true) {
                 if($loopProtection > 20) {
                     throw new BreakingChangeException('URL guessing loop is going crazy');
